@@ -1,0 +1,80 @@
+import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
+
+const EpisodesCard = () => {
+  const [getData, setData] = useState([]);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const url = "https://rickandmortyapi.com/api/episode";
+        const response = await fetch(url);
+        const data = await response.json();
+        let result = Promise.all(
+          data.results.map((item) => {
+            return Promise.all(
+              item.characters.map((innerItem) => {
+                return fetch(innerItem)
+                  .then((res) => res.json())
+                  .then((imageData) => imageData.image);
+              })
+            );
+          })
+        );
+        result
+          .then((arr) => {
+            let finalArr = [];
+            data.results.map((item, index) => {
+              item.cImages = arr[index];
+              finalArr.push(item);
+            });
+            setData(finalArr);
+          })
+          .catch((error) => {
+            console.error("Error:", error);
+          });
+      } catch (error) {
+        console.error("Error fetching data:", error);
+      }
+    };
+    fetchData();
+  }, []);
+  return (
+    <main className="bg-[#181818] flex flex-col flex-wrap items-center px-4">
+      <div className="w-full font-semibold  flex justify-between items-center px-5 ">
+        <h1 className="text-white font-semibold text-4xl capitalize">
+          episodes
+        </h1>
+        <Link
+          to="episodes"
+          className="underline after:content-['View-All'] md:after:content-['View-All-Characters'] text-white"
+        ></Link>
+      </div>
+      {getData.slice(0, 4).map((episode, index) => (
+        <div
+          className="bg-white w-full min-h-full rounded-md text-3xl"
+          key={index}
+        >
+          <div className="w-full h-[300px] overflow-hidden">
+            <img className="overflow-hidden h-3/5" src={episode.url} alt="" />
+            <div className="px-5 py-4">
+              <h1>{episode.episode}</h1>
+            </div>
+            <div className="px-4">
+              <h1 className="font-normal capitalize text-2xl">
+                {episode.name}
+              </h1>
+              <p>Air Date : {episode.air_date}</p>
+              {episode.cImages.map((innerItem) => {
+              return (
+                <div
+                  className="overflow-hidden rounded-full -ml-3 w-12 h-12 "
+                  key={index}
+                >
+                  <img className="object-cover" src={innerItem} alt="" />
+                </div>
+              );
+            })}
+          </div>
+
+export default EpisodesCard;
